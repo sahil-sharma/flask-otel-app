@@ -24,15 +24,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Extract short SHA
+        id: vars
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       # Step 3: Build the Docker image
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:v1 .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }} .
 
       # Step 4: Push the Docker image to Docker Hub
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:v1
+          docker push ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }}
 
       # Optional Step: Push a tagged version based on git tag
       # - name: Tag Docker image
