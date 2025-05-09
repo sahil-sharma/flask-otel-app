@@ -28,15 +28,15 @@ jobs:
         id: vars
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      # Step 3: Build the Docker image
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }} .
+      # # Step 3: Build the Docker image
+      # - name: Build Docker image
+      #   run: |
+      #     docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }} .
 
-      # Step 4: Push the Docker image to Docker Hub
-      - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }}
+      # # Step 4: Push the Docker image to Docker Hub
+      # - name: Push Docker image
+      #   run: |
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }}
 
       # Optional Step: Push a tagged version based on git tag
       # - name: Tag Docker image
@@ -54,11 +54,12 @@ jobs:
 
       - name: Update image tag
         run: |
-          sudo apt-get update && sudo apt install yq -y
+          sudo apt-get update && sudo apt install yq -y && ls -ltrha
           yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i k8s-stuff/flask-otel-app-chart/values.yaml
 
       - name: Commit and push
         run: |
+          cd k8s-stuff
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add flask-otel-app-chart/values.yaml
