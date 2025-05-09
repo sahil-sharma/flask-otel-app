@@ -54,6 +54,8 @@ jobs:
       - name: Update image tag
         run: |
           sed -i 's/tag: .*/tag: ${{ env.SHORT_SHA }}/' ./flask-otel-app-chart/values.yaml
+          echo ""
+          cat ./flask-otel-app-chart/values.yaml | grep tag
 
       - name: Commit and push
         run: |
