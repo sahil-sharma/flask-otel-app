@@ -89,7 +89,7 @@ def token_required(f):
 @app.route("/")
 def home():
     logger.info(f"[ANON] {request.method} {request.path} homepage access")
-    return jsonify({"message": "Welcome to the Flask CRUD App!"})
+    return jsonify({"message": "Welcome to the Flask CRUD App version v1!"})
 
 @app.route("/signup", methods=["POST"])
 def signup():
