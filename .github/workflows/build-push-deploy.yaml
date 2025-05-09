@@ -54,7 +54,7 @@ jobs:
 
       - name: Update image tag
         run: |
-          apt-get update && apt install yq -y
+          sudo apt-get update && sudo apt install yq -y
           yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i flask-otel-app-chart/values.yaml
 
       - name: Commit and push
