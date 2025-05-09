@@ -56,7 +56,7 @@ jobs:
           sudo apt-get update && sudo apt install yq -y
           ls -ltrha
           pwd
-          yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i ./k8s-stuff/flask-otel-app-chart/values.yaml
+          yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i ./flask-otel-app-chart/values.yaml
 
       - name: Commit and push
         run: |
