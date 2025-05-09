@@ -55,12 +55,12 @@ jobs:
         run: |
           sed -i 's/tag: .*/tag: ${{ env.SHORT_SHA }}/' ./flask-otel-app-chart/values.yaml
           echo ""
-          cat ./flask-otel-app-chart/values.yaml | grep tag
+          cat ./flask-otel-app-chart/values.yaml | grep 'tag:'
 
       - name: Commit and push
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "sahil-sharma"
+          git config user.email "sahil-sharma@github.com"
           git add flask-otel-app-chart/values.yaml
           git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
           git push origin main
