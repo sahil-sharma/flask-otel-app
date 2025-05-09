@@ -1,4 +1,4 @@
-name: Build Docker Image CI/CD Pipeline
+name: Build and Push Docker Image CI/CD Pipeline
 
 on:
   push:
@@ -45,3 +45,22 @@ jobs:
       #     IMAGE_TAG=${GITHUB_REF#refs/tags/}
       #     docker tag yourusername/yourrepository:latest yourusername/yourrepository:$IMAGE_TAG
       #     docker push yourusername/yourrepository:$IMAGE_TAG
+
+      - name: Checkout Flask App Helm Chart Repo
+        uses: actions/checkout@v4
+        with:
+          repository: sahil-sharma/k8s-stuff
+          path: flask-otel-app-chart
+
+      - name: Update image tag
+        run: |
+          apt-get update && apt install yq -y
+          yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i flask-otel-app-chart/values.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add flask-otel-app-chart/values.yaml
+          git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
+          git push origin main
