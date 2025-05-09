@@ -1,4 +1,4 @@
-name: Build and Push Docker Image CI/CD Pipeline
+name: Build, Push, and Deploy Docker Image CI/CD Pipeline
 
 on:
   push:
@@ -55,7 +55,7 @@ jobs:
       - name: Update image tag
         run: |
           sudo apt-get update && sudo apt install yq -y
-          yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i flask-otel-app-chart/values.yaml
+          yq eval '.image.tag = "${{ env.SHORT_SHA }}"' -i k8s-stuff/flask-otel-app-chart/values.yaml
 
       - name: Commit and push
         run: |
