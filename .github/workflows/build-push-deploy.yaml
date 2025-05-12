@@ -66,8 +66,8 @@ jobs:
       - name: Commit and push
         run: |
           echo "Updating Image Tag"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
+          git config --global user.email "sahil.sharma@abc.com"
+          git config --global user.name "sahil-sharma"
           git add flask-otel-app-chart/values.yaml
           git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
           git push origin main
