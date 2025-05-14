@@ -31,15 +31,15 @@ jobs:
         id: vars
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      # # Step 3: Build the Docker image
-      # - name: Build Docker image
-      #   run: |
-      #     docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }} .
+      # Step 3: Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }} .
 
-      # # Step 4: Push the Docker image to Docker Hub
-      # - name: Push Docker image
-      #   run: |
-      #     docker push ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }}
+      # Step 4: Push the Docker image to Docker Hub
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/flask-otel-app:${{ env.SHORT_SHA }}
 
       # Optional Step: Push a tagged version based on git tag
       # - name: Tag Docker image
@@ -49,25 +49,25 @@ jobs:
       #     docker tag yourusername/yourrepository:latest yourusername/yourrepository:$IMAGE_TAG
       #     docker push yourusername/yourrepository:$IMAGE_TAG
 
-      - name: Checkout Flask App Helm Chart Repo
-        uses: actions/checkout@v4
-        with:
-          repository: sahil-sharma/k8s-stuff
+      # - name: Checkout Flask App Helm Chart Repo
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: sahil-sharma/k8s-stuff
 
-      - name: Update image tag
-        run: |
-          # With yq I am unable to update the image tag. That's why updating it with sed command.
-          # sudo apt update && sudo apt install yq -y
-          # yq eval '.image.tag = ${{env.SHORT_SHA }}' -i flask-otel-app-chart/values.yaml
-          sed -i 's/tag: .*/tag: ${{ env.SHORT_SHA }}/' ./flask-otel-app-chart/values.yaml
-          echo ""
-          cat ./flask-otel-app-chart/values.yaml | grep 'tag:'
+      # - name: Update image tag
+      #   run: |
+      #     # With yq I am unable to update the image tag. That's why updating it with sed command.
+      #     # sudo apt update && sudo apt install yq -y
+      #     # yq eval '.image.tag = ${{env.SHORT_SHA }}' -i flask-otel-app-chart/values.yaml
+      #     sed -i 's/tag: .*/tag: ${{ env.SHORT_SHA }}/' ./flask-otel-app-chart/values.yaml
+      #     echo ""
+      #     cat ./flask-otel-app-chart/values.yaml | grep 'tag:'
 
-      - name: Commit and push
-        run: |
-          echo "Updating Image Tag"
-          git config --global user.email "sahil.sharma@abc.com"
-          git config --global user.name "sahil-sharma"
-          git add flask-otel-app-chart/values.yaml
-          git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
-          git push origin main
+      # - name: Commit and push
+      #   run: |
+      #     echo "Updating Image Tag"
+      #     git config --global user.email "sahil.sharma@abc.com"
+      #     git config --global user.name "sahil-sharma"
+      #     git add flask-otel-app-chart/values.yaml
+      #     git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
+      #     git push origin main
