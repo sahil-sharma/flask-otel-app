@@ -24,8 +24,12 @@ migrate = Migrate(app, db)
 metrics = PrometheusMetrics(app)
 FlaskInstrumentor().instrument_app(app)
 
+resource = Resource(attributes={
+    SERVICE_NAME: "flask-app"
+})
+
 # Tracing Setup
-trace.set_tracer_provider(TracerProvider())
+trace.set_tracer_provider(TracerProvider(resource=resource))
 tracer = trace.get_tracer(__name__)
 span_processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=Config.OTLP_ENDPOINT))
 trace.get_tracer_provider().add_span_processor(span_processor)
@@ -88,8 +92,19 @@ def token_required(f):
 # Routes
 @app.route("/")
 def home():
-    logger.info(f"[ANON] {request.method} {request.path} homepage access")
+    # logger.info(f"[ANON] {request.method} {request.path} homepage access")
     return jsonify({"message": "Welcome to the Flask CRUD App version v1!"})
+
+@app.route("/healthz")
+def healthz():
+    try:
+        # Simple DB check
+        db.session.execute("SELECT 1")
+        return jsonify({"status": "ok"}), 200
+    except Exception as e:
+        logger.exception("Health check failed")
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
 
 @app.route("/signup", methods=["POST"])
 def signup():
