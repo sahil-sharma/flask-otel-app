@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from flask_migrate import Migrate
 from models import db, Users, Items
 from config import Config
