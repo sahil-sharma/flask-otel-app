@@ -9,6 +9,7 @@ from functools import wraps
 import jwt, requests, logging
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from prometheus_flask_exporter import PrometheusMetrics
+import Logging
 
 # Tracing
 from opentelemetry import trace
@@ -157,4 +158,6 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         logger.info("Database tables created (if not already existing).")
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
     app.run(host="0.0.0.0", port=5000)
