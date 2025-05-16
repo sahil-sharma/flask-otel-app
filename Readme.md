@@ -1,4 +1,4 @@
-# Flask CRUD App with OpenTelemetry, JWT Authentication, and Prometheus Metrics
+# Flask CRUD App with OpenTelemetry, JWT Authentication, Logging, and Prometheus Metrics
 
 This is a Flask-based CRUD application with JWT authentication and metrics collection using Prometheus. It also integrates OpenTelemetry for distributed tracing. The application supports multiple routes for user management and item handling, while providing tracing and monitoring capabilities.
 
