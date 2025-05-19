@@ -2,6 +2,12 @@
 
 This is a Flask-based CRUD application with JWT authentication and metrics collection using Prometheus. It also integrates OpenTelemetry for distributed tracing. The application supports multiple routes for user management and item handling, while providing tracing and monitoring capabilities.
 
+## Note:
+
+```bash
+ChatGPT's help has been taken to generate boiler-plate code and for its further improvements.
+```
+
 ## Features
 - **JWT Authentication**: Secure login and signup functionality with JWT tokens.
 - **CRUD Operations**: Create and retrieve items.
