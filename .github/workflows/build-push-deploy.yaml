@@ -58,9 +58,7 @@ jobs:
 
       - name: Update image tag
         run: |
-          sudo apt update && sudo apt install yq -y
-          yq eval ".image.tag = \"${{ env.SHORT_SHA }}\"" -i ./helm-repo/flask-otel-app-chart/values.yaml
-          grep 'tag:' ./helm-repo/flask-otel-app-chart/values.yaml
+          sed -i "s/tag: .*/tag: ${{ env.SHORT_SHA }}/" ./helm-repo/flask-otel-app-chart/values.yaml
 
       - name: Commit and push
         run: |
