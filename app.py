@@ -6,10 +6,11 @@ from models import db, Users, Items
 from config import Config
 from datetime import datetime, timedelta
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 import jwt, requests, logging
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from prometheus_flask_exporter import PrometheusMetrics
-import Logging
+import logging
 
 # Tracing
 from opentelemetry import trace
@@ -108,14 +109,14 @@ def healthz():
         logger.exception("Health check failed")
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
-
 @app.route("/signup", methods=["POST"])
 def signup():
     logger.info(f"[ANON] {request.method} {request.path} signup attempt")
     data = request.get_json()
     if Users.query.filter_by(username=data["username"]).first():
         return jsonify({"msg": "User already exists"}), 400
-    user = Users(username=data["username"], password=data["password"])
+    hashed_password = generate_password_hash(data["password"])
+    user = Users(username=data["username"], password=hashed_password)
     db.session.add(user)
     db.session.commit()
     return jsonify({"msg": "User created successfully"})
@@ -125,7 +126,7 @@ def login():
     logger.info(f"[ANON] {request.method} {request.path} login attempt")
     data = request.get_json()
     user = Users.query.filter_by(username=data["username"]).first()
-    if not user or user.password != data["password"]:
+    if not user or not check_password_hash(user.password, data["password"]):
         return jsonify({"msg": "Invalid credentials"}), 401
     token = create_token(user.id)
     return jsonify({"access_token": token})
@@ -148,9 +149,9 @@ def get_items(current_user):
     return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
 
 @app.route("/external", methods=["GET"])
-@token_required
-def external(current_user):
-    logger.info(f"{current_user} made external request")
+# @token_required
+def external():
+    logger.info(f"An external call being made.")
     resp = requests.get("https://httpbin.org/get")
     return resp.json()
 
