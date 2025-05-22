@@ -149,7 +149,10 @@ def get_items(current_user):
     return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
 
 @app.route("/external", methods=["GET"])
+# If you want this end-point behind JWT
 # @token_required
+# def external(current_user):
+# logger.info(f"{current_user} An external call being made.")
 def external():
     logger.info(f"An external call being made.")
     resp = requests.get("https://httpbin.org/get")
