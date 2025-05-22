@@ -49,25 +49,26 @@ jobs:
       #     docker tag yourusername/yourrepository:latest yourusername/yourrepository:$IMAGE_TAG
       #     docker push yourusername/yourrepository:$IMAGE_TAG
 
-      # - name: Checkout Flask App Helm Chart Repo
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: sahil-sharma/k8s-stuff
+      - name: Checkout Flask App Helm Chart Repo
+        uses: actions/checkout@v4
+        with:
+          repository: sahil-sharma/k8s-stuff
+          path: helm-repo
 
-      # - name: Update image tag
-      #   run: |
-      #     # With yq I am unable to update the image tag. That's why updating it with sed command.
-      #     # sudo apt update && sudo apt install yq -y
-      #     # yq eval '.image.tag = ${{env.SHORT_SHA }}' -i flask-otel-app-chart/values.yaml
-      #     sed -i 's/tag: .*/tag: ${{ env.SHORT_SHA }}/' ./flask-otel-app-chart/values.yaml
-      #     echo ""
-      #     cat ./flask-otel-app-chart/values.yaml | grep 'tag:'
+      - name: Update image tag
+        run: |
+          # With yq I am unable to update the image tag. That's why updating it with sed command.
+          # sudo apt update && sudo apt install yq -y
+          # yq eval '.image.tag = ${{env.SHORT_SHA }}' -i ./helm-repo/flask-otel-app-chart/values.yaml
+          sed -i "s/tag: .*/tag: ${{ env.SHORT_SHA }}/" ./helm-repo/flask-otel-app-chart/values.yaml
+          echo ""
+          cat ./helm-repo/flask-otel-app-chart/values.yaml | grep 'tag:'
 
-      # - name: Commit and push
-      #   run: |
-      #     echo "Updating Image Tag"
-      #     git config --global user.email "sahil.sharma@abc.com"
-      #     git config --global user.name "sahil-sharma"
-      #     git add flask-otel-app-chart/values.yaml
-      #     git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
-      #     git push origin main
+      - name: Commit and push
+        run: |
+          cd helm-repo
+          git config --global user.email "sahil.sharma@abc.com"
+          git config --global user.name "sahil-sharma"
+          git add flask-otel-app-chart/values.yaml
+          git commit -m "From CI: Update image tag to ${{ env.SHORT_SHA }}"
+          git push origin main
