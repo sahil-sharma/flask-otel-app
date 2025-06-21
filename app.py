@@ -12,42 +12,47 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from prometheus_flask_exporter import PrometheusMetrics
 import logging
 
-# Tracing
-from opentelemetry import trace
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
-
 # App Setup
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 migrate = Migrate(app, db)
 metrics = PrometheusMetrics(app)
-FlaskInstrumentor().instrument_app(app)
-
-resource = Resource(attributes={
-    SERVICE_NAME: "flask-app"
-})
-
-# Tracing Setup
-trace.set_tracer_provider(TracerProvider(resource=resource))
-tracer = trace.get_tracer(__name__)
-span_processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=Config.OTLP_ENDPOINT))
-trace.get_tracer_provider().add_span_processor(span_processor)
 
 # Logging Setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Tracing Setup (Optional)
+TRACING_ENABLED = getattr(Config, "TRACING_ENABLED", False)
+if TRACING_ENABLED:
+    try:
+        from opentelemetry import trace
+        from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+        resource = Resource(attributes={SERVICE_NAME: "crud-app"})
+        trace.set_tracer_provider(TracerProvider(resource=resource))
+        tracer = trace.get_tracer(__name__)
+        span_processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=Config.OTLP_ENDPOINT))
+        trace.get_tracer_provider().add_span_processor(span_processor)
+        FlaskInstrumentor().instrument_app(app)
+        logger.info("Tracing enabled and configured.")
+    except Exception as e:
+        tracer = None
+        TRACING_ENABLED = False
+        logger.warning(f"Tracing setup failed: {e}")
+else:
+    tracer = None
 
 # JWT Utility
 def create_token(user_id):
     user = Users.query.get(user_id)
     if not user:
         raise ValueError("User not found")
-
     payload = {
         "sub": str(user_id),
         "exp": datetime.utcnow() + timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -61,30 +66,23 @@ def token_required(f):
     def decorated(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
-            logger.warning("Missing or malformed Authorization header")
             return jsonify({"msg": "Token is missing or malformed"}), 403
-
         token = auth_header.replace("Bearer ", "").strip()
         try:
             decoded = jwt.decode(token, Config.JWT_SECRET, algorithms=[Config.JWT_ALGORITHM])
             current_user = Users.query.get(int(decoded["sub"]))
             if not current_user:
                 return jsonify({"msg": "User not found"}), 404
+            g.current_user = current_user
 
-            g.current_user = current_user  # Store in Flask's context
-
-            logger.info(f"[AUTH] {request.method} {request.path} by user: {current_user.username} (id={current_user.id})")
-
-            # Optional tracing
-            with tracer.start_as_current_span("authenticated-request") as span:
-                span.set_attribute("user.id", current_user.id)
-                span.set_attribute("user.username", current_user.username)
+            if TRACING_ENABLED and tracer:
+                with tracer.start_as_current_span("authenticated-request") as span:
+                    span.set_attribute("user.id", current_user.id)
+                    span.set_attribute("user.username", current_user.username)
 
         except ExpiredSignatureError:
-            logger.info("Token has expired")
             return jsonify({"msg": "Token has expired"}), 401
         except InvalidTokenError as e:
-            logger.warning(f"Invalid token: {e}")
             return jsonify({"msg": "Token is invalid"}), 401
         except Exception as e:
             logger.exception("Unexpected error during token validation")
@@ -96,13 +94,11 @@ def token_required(f):
 # Routes
 @app.route("/")
 def home():
-    # logger.info(f"[ANON] {request.method} {request.path} homepage access")
-    return jsonify({"message": "Welcome to the Flask CRUD App version v1!"})
+    return jsonify({"message": "Welcome to CRUD App version v1!"})
 
 @app.route("/healthz")
 def healthz():
     try:
-        # Simple DB check
         db.session.execute(text("SELECT 1"))
         return jsonify({"status": "ok"}), 200
     except Exception as e:
@@ -111,7 +107,6 @@ def healthz():
 
 @app.route("/signup", methods=["POST"])
 def signup():
-    logger.info(f"[ANON] {request.method} {request.path} signup attempt")
     data = request.get_json()
     if Users.query.filter_by(username=data["username"]).first():
         return jsonify({"msg": "User already exists"}), 400
@@ -123,7 +118,6 @@ def signup():
 
 @app.route("/login", methods=["POST"])
 def login():
-    logger.info(f"[ANON] {request.method} {request.path} login attempt")
     data = request.get_json()
     user = Users.query.filter_by(username=data["username"]).first()
     if not user or not check_password_hash(user.password, data["password"]):
@@ -131,28 +125,48 @@ def login():
     token = create_token(user.id)
     return jsonify({"access_token": token})
 
+# ITEM ROUTES
+
 @app.route("/items", methods=["POST"])
 @token_required
 def create_item(current_user):
     data = request.get_json()
-    logger.info(f"{current_user} is creating item: {data}")
     item = Items(name=data["name"], description=data["description"])
     db.session.add(item)
     db.session.commit()
-    return jsonify({"id": item.id, "name": item.name, "description": item.description})
+    return jsonify({"id": item.id, "name": item.name, "description": item.description}), 201
 
 @app.route("/items", methods=["GET"])
 @token_required
-def get_items(current_user):
-    logger.info(f"{current_user} requested item list")
+def list_items(current_user):
     items = Items.query.all()
     return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
 
+@app.route("/items/<int:item_id>", methods=["GET"])
+@token_required
+def get_item(current_user, item_id):
+    item = Items.query.get_or_404(item_id)
+    return jsonify({"id": item.id, "name": item.name, "description": item.description})
+
+@app.route("/items/<int:item_id>", methods=["PUT", "PATCH"])
+@token_required
+def update_item(current_user, item_id):
+    item = Items.query.get_or_404(item_id)
+    data = request.get_json()
+    item.name = data.get("name", item.name)
+    item.description = data.get("description", item.description)
+    db.session.commit()
+    return jsonify({"id": item.id, "name": item.name, "description": item.description})
+
+@app.route("/items/<int:item_id>", methods=["DELETE"])
+@token_required
+def delete_item(current_user, item_id):
+    item = Items.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"msg": "Item deleted"})
+
 @app.route("/external", methods=["GET"])
-# If you want this end-point behind JWT
-# @token_required
-# def external(current_user):
-# logger.info(f"{current_user} An external call being made.")
 def external():
     logger.info(f"An external call being made.")
     resp = requests.get("https://httpbin.org/get")
