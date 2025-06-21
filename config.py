@@ -18,6 +18,6 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    TRACING_ENABLED = True  # or False to disable tracing
+    TRACING_ENABLED = os.getenv("TRACING_ENABLED", "false").lower() == "true"
 
     OTLP_ENDPOINT = os.environ["OTLP_ENDPOINT"]

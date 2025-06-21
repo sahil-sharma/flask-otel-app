@@ -4,7 +4,7 @@ from sqlalchemy import text
 from flask_migrate import Migrate
 from models import db, Users, Items
 from config import Config
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt, requests, logging
@@ -24,8 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Tracing Setup (Optional)
-TRACING_ENABLED = getattr(Config, "TRACING_ENABLED", False)
-if TRACING_ENABLED:
+if Config.TRACING_ENABLED:
     try:
         from opentelemetry import trace
         from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -55,7 +54,7 @@ def create_token(user_id):
         raise ValueError("User not found")
     payload = {
         "sub": str(user_id),
-        "exp": datetime.utcnow() + timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
     }
     token = jwt.encode(payload, Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHM)
     return token if isinstance(token, str) else token.decode("utf-8")
@@ -75,7 +74,7 @@ def token_required(f):
                 return jsonify({"msg": "User not found"}), 404
             g.current_user = current_user
 
-            if TRACING_ENABLED and tracer:
+            if tracer:
                 with tracer.start_as_current_span("authenticated-request") as span:
                     span.set_attribute("user.id", current_user.id)
                     span.set_attribute("user.username", current_user.username)
