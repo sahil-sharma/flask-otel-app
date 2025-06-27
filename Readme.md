@@ -38,10 +38,12 @@ Before you begin, ensure you have the following installed:
 ## 1. GET / - Display Welcome Message
 - Description: Returns a simple welcome message.
 - Authentication: Not Required
+- Endpoint: `http://<URL>/`
 
 ## 2. POST /login - User Login
 - Description: Logs in a user and returns a JWT token.
 - Authentication: Not Required
+- Endpoint: `http://<URL>/login`
 - Headers:
 ```bash
 "Content-Type: application/json"
@@ -63,6 +65,7 @@ Before you begin, ensure you have the following installed:
 ## 3. POST /signup
 - Description: Registers a new user.
 - Authentication: Not required
+- Endpoint: `http://<URL>/signup`
 - Headers:
 ```bash
 "Content-Type: application/json"
@@ -75,9 +78,10 @@ Before you begin, ensure you have the following installed:
 }
 ```
 
-## 4. POST /items
+## 4. POST /items/create
 - Description: Adds a new item.
 - Authentication: ✅ JWT required
+- Endpoint: `http://<URL>/items/create`
 - Headers:
 ```bash
 "Content-Type: application/json"
@@ -98,9 +102,9 @@ Before you begin, ensure you have the following installed:
 ```
 
 ## 5. GET /items
-- Description: Retrieves all items.
+- Description: List all items.
 - Authentication: ✅ JWT required
-- Headers:
+- Endpoint: `http://<URL>/items`
 - Headers:
 ```bash
 "Content-Type: application/json"
@@ -117,7 +121,57 @@ Before you begin, ensure you have the following installed:
 }
 ```
 
-## 6. GET /external
+## 6. GET /items?item_id=id
+- Description: List a specific item with ID.
+- Authentication: ✅ JWT required
+- Endpoint: `http://<URL>/items?item_id=<id>`
+- Headers:
+```bash
+"Content-Type: application/json"
+"Authorization: Bearer <JWT_TOKEN>"
+```
+- Response Body:
+```bash
+{
+  "name": "ItemName1",
+  "description": "ItemDescription1",
+}
+```
+
+## 7. PUT /items/update?item_id=id
+- Description: Update specific item with ID.
+- Authentication: ✅ JWT required
+- Endpoint: `http://<URL>/items/update?item_id=<id>`
+- Headers:
+```bash
+"Content-Type: application/json"
+"Authorization: Bearer <JWT_TOKEN>"
+```
+- Response Body:
+```bash
+{
+  "name": "ItemName1_Update",
+  "description": "ItemDescription1_Update",
+}
+```
+
+## 8. DELETE /items/delete?item_id=id
+- Description: Delete specific item with ID.
+- Authentication: ✅ JWT required
+- Endpoint: `http://<URL>/items/delete?item_id=<id>`
+- Headers:
+```bash
+"Content-Type: application/json"
+"Authorization: Bearer <JWT_TOKEN>"
+```
+- Response Body:
+```bash
+{
+  "Item Deleted."
+}
+```
+
+## 9. GET /external
 - Description: Makes an external API request to httpbin.org.
 - Authentication: ✅ JWT required
 - Headers:
