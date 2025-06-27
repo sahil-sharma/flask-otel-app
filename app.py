@@ -126,7 +126,7 @@ def login():
 
 # ITEM ROUTES
 
-@app.route("/items", methods=["POST"])
+@app.route("/items/create", methods=["POST"])
 @token_required
 def create_item(current_user):
     data = request.get_json()
@@ -137,19 +137,21 @@ def create_item(current_user):
 
 @app.route("/items", methods=["GET"])
 @token_required
-def list_items(current_user):
-    items = Items.query.all()
-    return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
+def list_or_get_item(current_user):
+    item_id = request.args.get("item_id")
+    if item_id:
+        item = Items.query.get_or_404(item_id)
+        return jsonify({"id": item.id, "name": item.name, "description": item.description})
+    else:
+        items = Items.query.all()
+        return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
 
-@app.route("/items/<int:item_id>", methods=["GET"])
+@app.route("/items/update", methods=["PUT", "PATCH"])
 @token_required
-def get_item(current_user, item_id):
-    item = Items.query.get_or_404(item_id)
-    return jsonify({"id": item.id, "name": item.name, "description": item.description})
-
-@app.route("/items/<int:item_id>", methods=["PUT", "PATCH"])
-@token_required
-def update_item(current_user, item_id):
+def update_item(current_user):
+    item_id = request.args.get("item_id")
+    if not item_id:
+        return jsonify({"msg": "item_id query parameter is required"}), 400
     item = Items.query.get_or_404(item_id)
     data = request.get_json()
     item.name = data.get("name", item.name)
@@ -157,9 +159,12 @@ def update_item(current_user, item_id):
     db.session.commit()
     return jsonify({"id": item.id, "name": item.name, "description": item.description})
 
-@app.route("/items/<int:item_id>", methods=["DELETE"])
+@app.route("/items/delete", methods=["DELETE"])
 @token_required
-def delete_item(current_user, item_id):
+def delete_item(current_user):
+    item_id = request.args.get("item_id")
+    if not item_id:
+        return jsonify({"msg": "item_id query parameter is required"}), 400
     item = Items.query.get_or_404(item_id)
     db.session.delete(item)
     db.session.commit()
