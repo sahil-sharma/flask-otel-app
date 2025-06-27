@@ -135,16 +135,21 @@ def create_item(current_user):
     db.session.commit()
     return jsonify({"id": item.id, "name": item.name, "description": item.description}), 201
 
+@app.route("/items/all", methods=["GET"])
+@token_required
+def list_items(current_user):
+    items = Items.query.all()
+    return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
+
 @app.route("/items", methods=["GET"])
 @token_required
-def list_or_get_item(current_user):
+def get_item_by_query(current_user):
     item_id = request.args.get("item_id")
-    if item_id:
-        item = Items.query.get_or_404(item_id)
-        return jsonify({"id": item.id, "name": item.name, "description": item.description})
-    else:
-        items = Items.query.all()
-        return jsonify([{"id": i.id, "name": i.name, "description": i.description} for i in items])
+    if not item_id:
+        return jsonify({"msg": "Missing item_id query parameter"}), 400
+    item = Items.query.get_or_404(item_id)
+    return jsonify({"id": item.id, "name": item.name, "description": item.description})
+
 
 @app.route("/items/update", methods=["PUT", "PATCH"])
 @token_required

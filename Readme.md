@@ -101,7 +101,7 @@ Before you begin, ensure you have the following installed:
 }
 ```
 
-## 5. GET /items
+## 5. GET /items/all
 - Description: List all items.
 - Authentication: ✅ JWT required
 - Endpoint: `http://<URL>/items`
